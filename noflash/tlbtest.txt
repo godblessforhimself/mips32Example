@@ -1,0 +1,25 @@
+tlbwi需要的cp0寄存器：entryhi,entrylo0,entrylo1,index
+	Register 0: Index
+　　Register 2, EntryLo0，访问TLB Entry偶数页中的地址低32Bit用
+　　Register 3, EntryLo1，访问TLB Entry奇数页中的地址低32Bit用
+	Register 10，EntryHi，这个寄存器同EntryLo0/1一样，用于MMU中。以后会详述。
+	
+	定义VPN2=VADDR(31 DOWNTO 13),PPN0=paddr0(31 downto 12),PPN1=paddr1(31 downto 12);
+
+	ENTRYHI = VPN2 & (OTHERS=>'0');
+	entrylo0 = Zeros(31 downto 26) & PPN0 & (0000V0);
+	entrylo1 = Zeros(31 downto 26) & PPN1 & (0000V0);
+
+	实际上TLBWI做的事情是把VPN2，PPN0，Valid0, PPN1, Valid1这五项写到第Index个TLB表项中。
+	共有16个TLB表项，对应INDEX 0-15。
+	
+	进行TLB查询匹配时，进入MMU的VADDR与16个TLB表项进行并行的匹配，若VADDR（31 downto 13）= TLB项存的VPN2，且VADDR（12）对应的PPN的V值=1，说明匹配成功，返回该项，否则触发MISS。
+
+	
+	
+	如下伪指令实现了把vaddr? 的虚地址匹配到ram的物理地址?的
+mtc0 index 15
+mtc0 hi 0x00000000
+mtc0 low0 0x00000002
+mtc0 low1 0x00000042
+tlbwi
